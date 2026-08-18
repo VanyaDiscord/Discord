@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Clone</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Левая панель серверов -->
+        <div class="servers-sidebar">
+            <div class="server-icon home active">
+                <span>🏠</span>
+            </div>
+            <div class="server-divider"></div>
+            <div class="server-icon">
+                <span>🎮</span>
+            </div>
+            <div class="server-icon">
+                <span>🎵</span>
+            </div>
+            <div class="server-icon">
+                <span>📚</span>
+            </div>
+            <div class="server-icon">
+                <span>💻</span>
+            </div>
+            <div class="server-icon add-server">
+                <span>+</span>
+            </div>
+        </div>
+
+        <!-- Панель каналов -->
+        <div class="channels-sidebar">
+            <div class="server-header">
+                <h2>Мой Сервер</h2>
+                <button class="dropdown-btn">⌄</button>
+            </div>
+            
+            <div class="channels-list">
+                <div class="channel-category">
+                    <span class="category-name">📢 ИНФОРМАЦИЯ</span>
+                    <button class="add-btn">+</button>
+                </div>
+                <div class="channel active">
+                    <span class="channel-icon">#</span>
+                    <span>общий</span>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">#</span>
+                    <span>правила</span>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">📢</span>
+                    <span>объявления</span>
+                </div>
+
+                <div class="channel-category">
+                    <span class="category-name">💬 ОБЩЕНИЕ</span>
+                    <button class="add-btn">+</button>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">#</span>
+                    <span>чат</span>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">#</span>
+                    <span>игры</span>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">🔊</span>
+                    <span>Голосовой канал</span>
+                </div>
+
+                <div class="channel-category">
+                    <span class="category-name">🎯 ПРОЕКТЫ</span>
+                    <button class="add-btn">+</button>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">#</span>
+                    <span>разработка</span>
+                </div>
+                <div class="channel">
+                    <span class="channel-icon">#</span>
+                    <span>дизайн</span>
+                </div>
+            </div>
+
+            <!-- Профиль пользователя -->
+            <div class="user-profile">
+                <div class="user-avatar">👤</div>
+                <div class="user-info">
+                    <div class="username">Пользователь</div>
+                    <div class="user-status">#1234</div>
+                </div>
+                <div class="user-actions">
+                    <button>🎤</button>
+                    <button>🎧</button>
+                    <button>⚙️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основная область чата -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="channel-info">
+                    <span class="channel-icon">#</span>
+                    <h3>общий</h3>
+                </div>
+                <div class="chat-actions">
+                    <button>🔔</button>
+                    <button>📌</button>
+                    <button>👥</button>
+                    <div class="search-bar">
+                        <input type="text" placeholder="Поиск">
+                    </div>
+                </div>
+            </div>
+
+            <div class="messages-area">
+                <div class="message">
+                    <div class="message-avatar">😀</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">User1</span>
+                            <span class="message-time">Сегодня в 14:30</span>
+                        </div>
+                        <div class="message-text">Привет всем! Как дела?</div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">🎮</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">GamerPro</span>
+                            <span class="message-time">Сегодня в 14:32</span>
+                        </div>
+                        <div class="message-text">Отлично! Кто хочет поиграть?</div>
+                    </div>
+                </div>
+
+                <div class="message">
+                    <div class="message-avatar">💻</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">DevMaster</span>
+                            <span class="message-time">Сегодня в 14:35</span>
+                        </div>
+                        <div class="message-text">Я сейчас занят проектом, но вечером свободен!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Поле ввода сообщения -->
+            <div class="message-input">
+                <button class="attach-btn">+</button>
+                <input type="text" placeholder="Написать в #общий">
+                <button class="emoji-btn">😊</button>
+                <button class="send-btn">➤</button>
+            </div>
+        </div>
+
+        <!-- Правая панель участников -->
+        <div class="members-sidebar">
+            <h3>Участники — 3</h3>
+            <div class="member">
+                <div class="member-avatar">👑</div>
+                <span class="member-name">Admin</span>
+            </div>
+            <div class="member">
+                <div class="member-avatar">😀</div>
+                <span class="member-name">User1</span>
+            </div>
+            <div class="member">
+                <div class="member-avatar">🎮</div>
+                <span class="member-name">GamerPro</span>
+            </div>
+            <div class="member">
+                <div class="member-avatar">💻</div>
+                <span class="member-name">DevMaster</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+  </html>
