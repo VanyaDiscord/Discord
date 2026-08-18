@@ -4,7 +4,500 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discord Clone</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #36393f;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Левая панель серверов */
+        .servers-sidebar {
+            width: 72px;
+            background: #202225;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .server-icon {
+            width: 48px;
+            height: 48px;
+            background: #36393f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .server-icon:hover {
+            border-radius: 16px;
+            background: #5865f2;
+        }
+
+        .server-icon.active {
+            border-radius: 16px;
+            background: #5865f2;
+        }
+
+        .server-icon.active::before {
+            content: '';
+            position: absolute;
+            left: -16px;
+            width: 4px;
+            height: 40px;
+            background: white;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .server-icon span {
+            font-size: 24px;
+        }
+
+        .add-server {
+            background: #2f3136;
+            color: #3ba55d;
+            font-size: 24px;
+        }
+
+        .server-divider {
+            width: 32px;
+            height: 2px;
+            background: #36393f;
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+
+        /* Панель каналов */
+        .channels-sidebar {
+            width: 240px;
+            background: #2f3136;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #202225;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .server-header:hover {
+            background: #36393f;
+        }
+
+        .server-header h2 {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .dropdown-btn {
+            background: none;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .channels-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .channel-category {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            color: #8e9297;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .add-btn {
+            background: none;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .add-btn:hover {
+            color: #dcddde;
+        }
+
+        .channel {
+            padding: 8px 16px;
+            color: #8e9297;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.1s;
+            border-radius: 4px;
+            margin: 0 8px;
+        }
+
+        .channel:hover {
+            background: #36393f;
+            color: #dcddde;
+        }
+
+        .channel.active {
+            background: #42464d;
+            color: white;
+        }
+
+        .channel-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Профиль пользователя */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #292b2f;
+            gap: 8px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .username {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-status {
+            color: #8e9297;
+            font-size: 12px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .user-actions button {
+            background: none;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+        }
+
+        .user-actions button:hover {
+            color: #dcddde;
+        }
+
+        /* Область чата */
+        .chat-area {
+            flex: 1;
+            background: #36393f;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .chat-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #26272b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #36393f;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        }
+
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .channel-info h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chat-actions button {
+            background: none;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .chat-actions button:hover {
+            color: #dcddde;
+        }
+
+        .search-bar input {
+            background: #202225;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: #dcddde;
+            width: 140px;
+        }
+
+        .search-bar input::placeholder {
+            color: #8e9297;
+        }
+
+        /* Сообщения */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 16px;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.1s;
+        }
+
+        .message:hover {
+            background: #32353b;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: #5865f2;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .message-author {
+            color: #dcddde;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .message-time {
+            color: #8e9297;
+            font-size: 12px;
+        }
+
+        .message-text {
+            color: #dcddde;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        /* Поле ввода */
+        .message-input {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #36393f;
+        }
+
+        .message-input input {
+            flex: 1;
+            background: #40444b;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            color: #dcddde;
+            font-size: 14px;
+        }
+
+        .message-input input::placeholder {
+            color: #8e9297;
+        }
+
+        .message-input button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #8e9297;
+            padding: 8px;
+        }
+
+        .message-input button:hover {
+            color: #dcddde;
+        }
+
+        .attach-btn {
+            font-size: 24px;
+        }
+
+        .send-btn {
+            background: #5865f2 !important;
+            color: white !important;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            background: #4752c4 !important;
+            color: white !important;
+        }
+
+        /* Правая панель участников */
+        .members-sidebar {
+            width: 240px;
+            background: #2f3136;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .members-sidebar h3 {
+            color: #8e9297;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .member {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+
+        .member:hover {
+            background: #36393f;
+        }
+
+        .member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .member-name {
+            color: #8e9297;
+            font-size: 14px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2f3136;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #202225;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #36393f;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .servers-sidebar {
+                width: 60px;
+            }
+            
+            .channels-sidebar {
+                width: 180px;
+            }
+            
+            .members-sidebar {
+                display: none;
+            }
+            
+            .search-bar input {
+                width: 100px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .channels-sidebar {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="app">
@@ -43,15 +536,15 @@
                     <span class="category-name">📢 ИНФОРМАЦИЯ</span>
                     <button class="add-btn">+</button>
                 </div>
-                <div class="channel active">
+                <div class="channel active" data-channel="общий">
                     <span class="channel-icon">#</span>
                     <span>общий</span>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="правила">
                     <span class="channel-icon">#</span>
                     <span>правила</span>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="объявления">
                     <span class="channel-icon">📢</span>
                     <span>объявления</span>
                 </div>
@@ -60,15 +553,15 @@
                     <span class="category-name">💬 ОБЩЕНИЕ</span>
                     <button class="add-btn">+</button>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="чат">
                     <span class="channel-icon">#</span>
                     <span>чат</span>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="игры">
                     <span class="channel-icon">#</span>
                     <span>игры</span>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="голосовой-канал">
                     <span class="channel-icon">🔊</span>
                     <span>Голосовой канал</span>
                 </div>
@@ -77,11 +570,11 @@
                     <span class="category-name">🎯 ПРОЕКТЫ</span>
                     <button class="add-btn">+</button>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="разработка">
                     <span class="channel-icon">#</span>
                     <span>разработка</span>
                 </div>
-                <div class="channel">
+                <div class="channel" data-channel="дизайн">
                     <span class="channel-icon">#</span>
                     <span>дизайн</span>
                 </div>
@@ -95,9 +588,9 @@
                     <div class="user-status">#1234</div>
                 </div>
                 <div class="user-actions">
-                    <button>🎤</button>
-                    <button>🎧</button>
-                    <button>⚙️</button>
+                    <button title="Микрофон">🎤</button>
+                    <button title="Наушники">🎧</button>
+                    <button title="Настройки">⚙️</button>
                 </div>
             </div>
         </div>
@@ -110,9 +603,9 @@
                     <h3>общий</h3>
                 </div>
                 <div class="chat-actions">
-                    <button>🔔</button>
-                    <button>📌</button>
-                    <button>👥</button>
+                    <button title="Уведомления">🔔</button>
+                    <button title="Закрепленные сообщения">📌</button>
+                    <button title="Участники">👥</button>
                     <div class="search-bar">
                         <input type="text" placeholder="Поиск">
                     </div>
@@ -152,20 +645,31 @@
                         <div class="message-text">Я сейчас занят проектом, но вечером свободен!</div>
                     </div>
                 </div>
+
+                <div class="message">
+                    <div class="message-avatar">🎨</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">Designer</span>
+                            <span class="message-time">Сегодня в 14:40</span>
+                        </div>
+                        <div class="message-text">Кто-нибудь видел новые обновления Discord?</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Поле ввода сообщения -->
             <div class="message-input">
-                <button class="attach-btn">+</button>
-                <input type="text" placeholder="Написать в #общий">
-                <button class="emoji-btn">😊</button>
-                <button class="send-btn">➤</button>
+                <button class="attach-btn" title="Прикрепить файл">+</button>
+                <input type="text" placeholder="Написать в #общий" id="messageInput">
+                <button class="emoji-btn" title="Эмодзи">😊</button>
+                <button class="send-btn" title="Отправить">➤</button>
             </div>
         </div>
 
         <!-- Правая панель участников -->
         <div class="members-sidebar">
-            <h3>Участники — 3</h3>
+            <h3>Участники — 4</h3>
             <div class="member">
                 <div class="member-avatar">👑</div>
                 <span class="member-name">Admin</span>
@@ -182,9 +686,133 @@
                 <div class="member-avatar">💻</div>
                 <span class="member-name">DevMaster</span>
             </div>
+            <div class="member">
+                <div class="member-avatar">🎨</div>
+                <span class="member-name">Designer</span>
+            </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // Переключение каналов
+        document.querySelectorAll('.channel').forEach(channel => {
+            channel.addEventListener('click', function() {
+                // Убираем активный класс у всех каналов
+                document.querySelectorAll('.channel').forEach(ch => {
+                    ch.classList.remove('active');
+                });
+                // Добавляем активный класс текущему каналу
+                this.classList.add('active');
+                
+                // Обновляем заголовок чата
+                const channelName = this.querySelector('span:last-child').textContent;
+                document.querySelector('.channel-info h3').textContent = channelName;
+                
+                // Обновляем placeholder в поле ввода
+                document.getElementById('messageInput').placeholder = 
+                    `Написать в #${channelName}`;
+            });
+        });
+
+        // Отправка сообщений
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.querySelector('.send-btn');
+        const messagesArea = document.querySelector('.messages-area');
+
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText) {
+                const now = new Date();
+                const timeString = `Сегодня в ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                const messageHTML = `
+                    <div class="message">
+                        <div class="message-avatar">👤</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">Пользователь</span>
+                                <span class="message-time">${timeString}</span>
+                            </div>
+                            <div class="message-text">${messageText}</div>
+                        </div>
+                    </div>
+                `;
+                
+                messagesArea.insertAdjacentHTML('beforeend', messageHTML);
+                messageInput.value = '';
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Переключение серверов
+        document.querySelectorAll('.server-icon').forEach(server => {
+            server.addEventListener('click', function() {
+                if (!this.classList.contains('add-server')) {
+                    document.querySelectorAll('.server-icon').forEach(s => {
+                        s.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Добавление нового сервера
+        document.querySelector('.add-server').addEventListener('click', function() {
+            alert('Функция добавления сервера будет доступна скоро!');
+        });
+
+        // Кнопки действий
+        document.querySelector('.attach-btn').addEventListener('click', function() {
+            alert('Загрузка файлов');
+        });
+
+        document.querySelector('.emoji-btn').addEventListener('click', function() {
+            messageInput.value += ' 😊';
+            messageInput.focus();
+        });
+
+        // Поиск по сообщениям
+        const searchInput = document.querySelector('.search-bar input');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const messages = document.querySelectorAll('.message-text');
+            
+            messages.forEach(msg => {
+                const text = msg.textContent.toLowerCase();
+                if (text.includes(searchTerm) && searchTerm !== '') {
+                    msg.closest('.message').style.backgroundColor = '#4a4d52';
+                } else {
+                    msg.closest('.message').style.backgroundColor = '';
+                }
+            });
+        });
+
+        // Переключение микрофона
+        document.querySelectorAll('.user-actions button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (this.textContent === '🎤') {
+                    this.textContent = '🔇';
+                    this.style.color = '#f04747';
+                } else if (this.textContent === '🔇') {
+                    this.textContent = '🎤';
+                    this.style.color = '#8e9297';
+                } else if (this.textContent === '🎧') {
+                    this.textContent = '🔊';
+                    this.style.color = '#f04747';
+                } else if (this.textContent === '🔊') {
+                    this.textContent = '🎧';
+                    this.style.color = '#8e9297';
+                }
+            });
+        });
+    </script>
 </body>
-  </html>
+    </html>
