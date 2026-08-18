@@ -3,752 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discord с звонками</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    
+    <title>Гиомитридеш</title>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            height: 100vh;
-            background: #313338;
-            overflow: hidden;
-        }
-
-        /* Экран входа */
-        .auth-screen {
-            position: fixed;
-            inset: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #313338;
-            z-index: 1000;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
         }
-
-        .auth-box {
-            background: #2b2d31;
-            padding: 30px;
-            border-radius: 8px;
-            width: 400px;
-        }
-
-        .auth-box h2 {
-            color: white;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .auth-box input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            background: #1e1f22;
-            border: none;
-            border-radius: 4px;
-            color: white;
-        }
-
-        .auth-box button {
-            width: 100%;
-            padding: 12px;
-            background: #5865f2;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        /* Основное приложение */
-        .app {
-            display: flex;
-            height: 100vh;
-        }
-
-        /* Левая панель */
-        .sidebar {
-            width: 240px;
-            background: #2b2d31;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 16px;
-            color: white;
-            font-weight: bold;
-            border-bottom: 1px solid #1e1f22;
-        }
-
-        .channels {
-            flex: 1;
-            padding: 10px;
-        }
-
-        .channel {
-            padding: 8px 12px;
-            color: #949ba4;
-            cursor: pointer;
-            border-radius: 4px;
-            margin-bottom: 2px;
-        }
-
-        .channel:hover {
-            background: #35373c;
-            color: white;
-        }
-
-        .channel.active {
-            background: #404249;
-            color: white;
-        }
-
-        .profile {
-            padding: 10px;
-            background: #232428;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .profile img, .profile .avatar-placeholder {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #5865f2;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .profile-info {
-            flex: 1;
-        }
-
-        .profile-name {
-            color: white;
-            font-size: 14px;
-        }
-
-        .profile-id {
-            color: #949ba4;
-            font-size: 12px;
-        }
-
-        /* Область чата */
-        .chat-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 12px 16px;
-            color: white;
-            border-bottom: 1px solid #1e1f22;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .call-button {
-            background: #5865f2;
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .messages {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-        }
-
-        .message {
-            margin-bottom: 12px;
-            color: #dbdee1;
-        }
-
-        .message strong {
-            color: white;
-        }
-
-        .input-area {
-            padding: 16px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .input-area input {
-            flex: 1;
-            padding: 10px;
-            background: #383a40;
-            border: none;
-            border-radius: 4px;
-            color: white;
-        }
-
-        .input-area button {
-            padding: 10px 20px;
-            background: #5865f2;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-        }
-
-        /* Интерфейс звонка */
-        .call-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            display: none;
-            z-index: 2000;
-        }
-
-        .call-overlay.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .video-area {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .remote-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .local-video {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 150px;
-            height: 100px;
-            border-radius: 8px;
-            border: 2px solid #5865f2;
-            background: #2b2d31;
-        }
-
-        .call-info {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            text-align: center;
-        }
-
-        .call-timer {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .call-controls {
+        
+        #gameContainer {
+            background: #2c3e50;
+            border-radius: 20px;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
-
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            background: #2b2d31;
-            color: white;
-        }
-
-        .control-btn.active {
-            background: #ed4245;
-        }
-
-        .control-btn.end {
-            background: #ed4245;
-        }
-
-        .control-btn:hover {
-            opacity: 0.8;
-        }
-
-        /* Уведомление о входящем звонке */
-        .incoming-call {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #2b2d31;
-            padding: 16px;
-            border-radius: 8px;
-            z-index: 3000;
-            display: none;
-            animation: slideIn 0.3s;
-        }
-
-        .incoming-call.active {
+        
+        canvas {
+            border: 4px solid #34495e;
+            border-radius: 10px;
             display: block;
         }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .incoming-call h3 {
+        
+        #score {
             color: white;
-            margin-bottom: 8px;
+            font-size: 24px;
+            text-align: center;
+            margin-top: 10px;
         }
-
-        .incoming-call button {
-            padding: 8px 16px;
-            margin-right: 8px;
+        
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .restart-btn {
+            background: #e74c3c;
+            color: white;
             border: none;
-            border-radius: 4px;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
             cursor: pointer;
-            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
         }
-
-        .accept-call {
-            background: #23a559;
-            color: white;
-        }
-
-        .decline-call {
-            background: #ed4245;
-            color: white;
+        
+        .restart-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
-    <!-- Экран входа -->
-    <div class="auth-screen" id="authScreen">
-        <div class="auth-box">
-            <h2>Вход в Discord</h2>
-            <input type="text" id="usernameInput" placeholder="Имя пользователя">
-            <button onclick="login()">Войти</button>
-        </div>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="score">Счёт: 0</div>
     </div>
-
-    <!-- Основное приложение -->
-    <div class="app" id="app" style="display:none;">
-        <!-- Левая панель -->
-        <div class="sidebar">
-            <div class="sidebar-header">Комнаты</div>
-            <div class="channels" id="channelsList">
-                <div class="channel active" onclick="joinRoom('general')"># общий</div>
-                <div class="channel" onclick="joinRoom('gaming')"># игры</div>
-                <div class="channel" onclick="joinRoom('music')"># музыка</div>
-            </div>
-            <div class="profile" onclick="logout()">
-                <div class="avatar-placeholder" id="avatar">👤</div>
-                <div class="profile-info">
-                    <div class="profile-name" id="profileName">Пользователь</div>
-                    <div class="profile-id" id="profileId">#0000</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Область чата -->
-        <div class="chat-area">
-            <div class="chat-header">
-                <span id="roomName"># общий</span>
-                <button class="call-button" onclick="startCall()">📞 Начать звонок</button>
-            </div>
-            <div class="messages" id="messages"></div>
-            <div class="input-area">
-                <input type="text" id="messageInput" placeholder="Написать сообщение...">
-                <button onclick="sendMessage()">Отправить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Интерфейс звонка -->
-    <div class="call-overlay" id="callOverlay">
-        <div class="video-area">
-            <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
-            <video class="local-video" id="localVideo" autoplay playsinline muted></video>
-            <div class="call-info">
-                <div class="call-timer" id="callTimer">00:00</div>
-                <div id="callStatus">Подключение...</div>
-            </div>
-        </div>
-        <div class="call-controls">
-            <button class="control-btn" id="muteBtn" onclick="toggleMute()">🎤</button>
-            <button class="control-btn" id="cameraBtn" onclick="toggleCamera()">📷</button>
-            <button class="control-btn end" onclick="endCall()">📞</button>
-        </div>
-    </div>
-
-    <!-- Входящий звонок -->
-    <div class="incoming-call" id="incomingCall">
-        <h3>📞 Входящий звонок</h3>
-        <p id="callerName" style="color:#949ba4;margin-bottom:8px;"></p>
-        <button class="accept-call" onclick="acceptCall()">Принять</button>
-        <button class="decline-call" onclick="declineCall()">Отклонить</button>
+    
+    <div id="gameOver">
+        <h2>Игра окончена!</h2>
+        <p>Ваш счёт: <span id="finalScore">0</span></p>
+        <button class="restart-btn" onclick="restartGame()">Играть снова</button>
     </div>
 
     <script>
-        // Firebase конфигурация
-        const firebaseConfig = {
-            apiKey: "AIzaSyAzJHoGXXIRHI-GJTAd-or48U1Tb1p2O7w",
-            authDomain: "discordweb-2c170.firebaseapp.com",
-            projectId: "discordweb-2c170",
-            storageBucket: "discordweb-2c170.firebasestorage.app",
-            messagingSenderId: "772542183782",
-            appId: "1:772542183782:web:8b1fa7f5fa63267d80f0a7"
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Игровые переменные
+        let gameRunning = true;
+        let score = 0;
+        let speed = 5;
+        let gravity = 0.5;
+        
+        // Куб (игрок)
+        const player = {
+            x: 100,
+            y: 300,
+            width: 40,
+            height: 40,
+            vy: 0,
+            rotation: 0,
+            color: '#00ff00',
+            isJumping: false
         };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        let currentUser = null;
-        let currentRoom = 'general';
-        let localStream = null;
-        let peerConnection = null;
-        let callTimer = null;
-        let seconds = 0;
-        let isMuted = false;
-        let isCameraOff = false;
-
-        // WebRTC конфигурация
-        const rtcConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        };
-
-        // Вход
-        function login() {
-            const username = document.getElementById('usernameInput').value.trim();
-            if (!username) return;
-
-            currentUser = {
-                id: Math.random().toString(36).substr(2, 9),
-                name: username
-            };
-
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-            document.getElementById('profileName').textContent = username;
-            document.getElementById('profileId').textContent = '#' + Math.floor(Math.random() * 10000);
-            
-            joinRoom('general');
-            listenForCalls();
-        }
-
-        // Выход
-        function logout() {
-            if (peerConnection) endCall();
-            currentUser = null;
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('authScreen').style.display = 'flex';
-        }
-
-        // Присоединение к комнате
-        function joinRoom(room) {
-            currentRoom = room;
-            document.querySelectorAll('.channel').forEach(ch => ch.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('roomName').textContent = '#' + room;
-            
-            // Загружаем сообщения
-            loadMessages(room);
-            
-            // Слушаем звонки в этой комнате
-            listenForRoomCalls(room);
-        }
-
-        // Загрузка сообщений
-        function loadMessages(room) {
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = '';
-            
-            db.collection('rooms').doc(room).collection('messages')
-                .orderBy('timestamp')
-                .onSnapshot((snapshot) => {
-                    messagesDiv.innerHTML = '';
-                    snapshot.forEach((doc) => {
-                        const msg = doc.data();
-                        const div = document.createElement('div');
-                        div.className = 'message';
-                        div.innerHTML = `<strong>${msg.username}:</strong> ${msg.text}`;
-                        messagesDiv.appendChild(div);
-                    });
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                });
-        }
-
-        // Отправка сообщения
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if (!text || !currentUser) return;
-
-            db.collection('rooms').doc(currentRoom).collection('messages').add({
-                username: currentUser.name,
-                text: text,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        
+        // Препятствия
+        let obstacles = [];
+        
+        // Функция создания препятствий
+        function createObstacle() {
+            const height = Math.random() * 100 + 30;
+            obstacles.push({
+                x: canvas.width,
+                y: canvas.height - height,
+                width: 30,
+                height: height,
+                color: '#ff4444'
             });
-
-            input.value = '';
         }
-
-        // Запуск звонка
-        async function startCall() {
-            try {
-                // Получаем доступ к камере и микрофону
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
-                });
-
-                document.getElementById('localVideo').srcObject = localStream;
-                document.getElementById('callOverlay').classList.add('active');
-
-                // Создаем peer connection
-                createPeerConnection();
-
-                // Добавляем локальный поток
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-
-                // Создаем offer
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-
-                // Отправляем offer
-                await db.collection('calls').doc(currentRoom).set({
-                    offer: offer,
-                    caller: currentUser.name,
-                    callerId: currentUser.id,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                // Слушаем ответ
-                listenForAnswer();
-
-                // Запускаем таймер
-                startTimer();
-
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Не удалось запустить звонок. Разрешите доступ к камере и микрофону.');
+        
+        // Обработка прыжка
+        function jump() {
+            if (!player.isJumping && gameRunning) {
+                player.vy = -12;
+                player.isJumping = true;
+                player.rotation = -45;
             }
         }
-
-        // Создание peer connection
-        function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(rtcConfig);
-
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    db.collection('calls').doc(currentRoom).collection('iceCandidates').add({
-                        candidate: event.candidate.toJSON()
-                    });
-                }
-            };
-
-            peerConnection.ontrack = (event) => {
-                document.getElementById('remoteVideo').srcObject = event.streams[0];
-                document.getElementById('callStatus').textContent = 'Подключено';
-            };
-
-            peerConnection.onconnectionstatechange = () => {
-                if (peerConnection.connectionState === 'disconnected') {
-                    endCall();
-                }
-            };
-        }
-
-        // Слушаем ответ
-        function listenForAnswer() {
-            db.collection('calls').doc(currentRoom).onSnapshot((doc) => {
-                const data = doc.data();
-                if (data && data.answer && !peerConnection.currentRemoteDescription) {
-                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    listenForIceCandidates();
-                }
-            });
-        }
-
-        // Слушаем ICE кандидатов
-        function listenForIceCandidates() {
-            db.collection('calls').doc(currentRoom).collection('iceCandidates').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        const candidate = new RTCIceCandidate(change.doc.data().candidate);
-                        peerConnection.addIceCandidate(candidate);
-                    }
-                });
-            });
-        }
-
-        // Слушаем входящие звонки
-        function listenForCalls() {
-            db.collection('calls').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        const call = change.doc.data();
-                        if (call.callerId !== currentUser.id) {
-                            showIncomingCall(call);
-                        }
-                    }
-                });
-            });
-        }
-
-        function listenForRoomCalls(room) {
-            db.collection('calls').doc(room).onSnapshot((doc) => {
-                if (doc.exists && doc.data().callerId !== currentUser.id) {
-                    const call = doc.data();
-                    if (call.offer && !call.answer) {
-                        showIncomingCall(call);
-                    }
-                }
-            });
-        }
-
-        // Показать входящий звонок
-        function showIncomingCall(call) {
-            document.getElementById('callerName').textContent = `${call.caller} звонит...`;
-            document.getElementById('incomingCall').classList.add('active');
+        
+        // Обработчики событий
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === 'ArrowUp') {
+                jump();
+            }
+        });
+        
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+        
+        // Обновление игры
+        function update() {
+            if (!gameRunning) return;
             
-            // Сохраняем offer для принятия
-            window.incomingOffer = call.offer;
-        }
-
-        // Принять звонок
-        async function acceptCall() {
-            document.getElementById('incomingCall').classList.remove('active');
+            // Гравитация
+            player.vy += gravity;
+            player.y += player.vy;
             
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
-                });
-
-                document.getElementById('localVideo').srcObject = localStream;
-                document.getElementById('callOverlay').classList.add('active');
-
-                createPeerConnection();
-
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(window.incomingOffer));
+            // Вращение куба
+            if (player.isJumping) {
+                player.rotation += 5;
+                if (player.rotation > 360) player.rotation = 0;
+            }
+            
+            // Проверка на касание земли
+            if (player.y > canvas.height - player.height) {
+                player.y = canvas.height - player.height;
+                player.vy = 0;
+                player.isJumping = false;
+                player.rotation = 0;
+            }
+            
+            // Создание препятствий
+            if (Math.random() < 0.02) {
+                createObstacle();
+            }
+            
+            // Движение препятствий
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= speed;
                 
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                await db.collection('calls').doc(currentRoom).update({
-                    answer: answer
-                });
-
-                listenForIceCandidates();
-                startTimer();
-
-            } catch (error) {
-                console.error('Ошибка:', error);
+                // Удаление препятствий за экраном
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    updateScore();
+                }
+                
+                // Проверка столкновений
+                if (checkCollision(player, obstacles[i])) {
+                    gameOver();
+                }
             }
         }
-
-        // Отклонить звонок
-        function declineCall() {
-            document.getElementById('incomingCall').classList.remove('active');
-            db.collection('calls').doc(currentRoom).delete();
+        
+        // Проверка столкновений
+        function checkCollision(player, obstacle) {
+            return player.x < obstacle.x + obstacle.width &&
+                   player.x + player.width > obstacle.x &&
+                   player.y < obstacle.y + obstacle.height &&
+                   player.y + player.height > obstacle.y;
         }
-
-        // Переключение микрофона
-        function toggleMute() {
-            isMuted = !isMuted;
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = !isMuted;
-                });
-            }
-            document.getElementById('muteBtn').classList.toggle('active');
-            document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🎤';
+        
+        // Отрисовка игры
+        function draw() {
+            // Очистка canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Фон
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Земля
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            
+            // Сохранение контекста для вращения куба
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+            ctx.rotate(player.rotation * Math.PI / 180);
+            
+            // Куб (игрок)
+            ctx.fillStyle = player.color;
+            ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+            
+            // Границы куба
+            ctx.strokeStyle = '#00cc00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
+            
+            ctx.restore();
+            
+            // Препятствия
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                
+                // Шипы на препятствиях
+                ctx.fillStyle = '#ff6666';
+                const spikeWidth = 10;
+                for (let i = 0; i < obstacle.width; i += spikeWidth) {
+                    ctx.beginPath();
+                    ctx.moveTo(obstacle.x + i, obstacle.y);
+                    ctx.lineTo(obstacle.x + i + spikeWidth / 2, obstacle.y - 10);
+                    ctx.lineTo(obstacle.x + i + spikeWidth, obstacle.y);
+                    ctx.fill();
+                }
+            });
         }
-
-        // Переключение камеры
-        function toggleCamera() {
-            isCameraOff = !isCameraOff;
-            if (localStream) {
-                localStream.getVideoTracks().forEach(track => {
-                    track.enabled = !isCameraOff;
-                });
-            }
-            document.getElementById('cameraBtn').classList.toggle('active');
-            document.getElementById('cameraBtn').textContent = isCameraOff ? '🚫' : '📷';
+        
+        // Обновление счёта
+        function updateScore() {
+            document.getElementById('score').textContent = `Счёт: ${score}`;
         }
-
-        // Таймер
-        function startTimer() {
-            seconds = 0;
-            callTimer = setInterval(() => {
-                seconds++;
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                document.getElementById('callTimer').textContent = 
-                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            }, 1000);
+        
+        // Игровой цикл
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
         }
-
-        // Завершение звонка
-        function endCall() {
-            clearInterval(callTimer);
-            
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            
-            document.getElementById('callOverlay').classList.remove('active');
-            document.getElementById('remoteVideo').srcObject = null;
-            document.getElementById('localVideo').srcObject = null;
-            
-            db.collection('calls').doc(currentRoom).delete();
-            
-            isMuted = false;
-            isCameraOff = false;
-            seconds = 0;
+        
+        // Игра окончена
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
         }
+        
+        // Перезапуск игры
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            speed = 5;
+            player.y = 300;
+            player.vy = 0;
+            player.isJumping = false;
+            player.rotation = 0;
+            obstacles = [];
+            document.getElementById('gameOver').style.display = 'none';
+            updateScore();
+        }
+        
+        // Запуск игры
+        gameLoop();
     </script>
 </body>
-</html>
+    </html>
