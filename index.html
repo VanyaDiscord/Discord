@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Discord Clone</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -18,6 +24,86 @@
             background: #36393f;
         }
 
+        /* Экран входа/регистрации */
+        .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #36393f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .auth-container {
+            background: #2f3136;
+            padding: 40px;
+            border-radius: 8px;
+            width: 400px;
+            text-align: center;
+        }
+
+        .auth-container h1 {
+            color: white;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .auth-container input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #202225;
+            border: 1px solid #040405;
+            border-radius: 4px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .auth-container input:focus {
+            outline: none;
+            border-color: #5865f2;
+        }
+
+        .auth-container button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #5865f2;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .auth-container button:hover {
+            background: #4752c4;
+        }
+
+        .auth-toggle {
+            color: #00aff4;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .auth-toggle:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #f04747;
+            font-size: 14px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        /* Основное приложение */
         .app {
             display: flex;
             height: 100vh;
@@ -187,6 +273,11 @@
             padding: 8px;
             background: #292b2f;
             gap: 8px;
+            cursor: pointer;
+        }
+
+        .user-profile:hover {
+            background: #36393f;
         }
 
         .user-avatar {
@@ -280,19 +371,6 @@
 
         .chat-actions button:hover {
             color: #dcddde;
-        }
-
-        .search-bar input {
-            background: #202225;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
-            color: #dcddde;
-            width: 140px;
-        }
-
-        .search-bar input::placeholder {
-            color: #8e9297;
         }
 
         /* Сообщения */
@@ -390,10 +468,6 @@
             color: #dcddde;
         }
 
-        .attach-btn {
-            font-size: 24px;
-        }
-
         .send-btn {
             background: #5865f2 !important;
             color: white !important;
@@ -455,6 +529,254 @@
             font-size: 14px;
         }
 
+        /* Панель личных сообщений */
+        .dm-panel {
+            width: 340px;
+            background: #2f3136;
+            display: none;
+            flex-direction: column;
+        }
+
+        .dm-panel.active {
+            display: flex;
+        }
+
+        .dm-header {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dm-header h2 {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .dm-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .dm-actions button {
+            background: none;
+            border: none;
+            color: #8e9297;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .dm-actions button:hover {
+            color: #dcddde;
+        }
+
+        .dm-section {
+            padding: 16px;
+            border-bottom: 1px solid #202225;
+        }
+
+        .dm-section h3 {
+            color: #8e9297;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .notification-item {
+            background: #36393f;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .notification-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .notification-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .notification-info {
+            flex: 1;
+        }
+
+        .notification-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .notification-id {
+            color: #8e9297;
+            font-size: 12px;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .accept-btn, .decline-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .accept-btn {
+            background: #3ba55d;
+            color: white;
+        }
+
+        .accept-btn:hover {
+            background: #2d7d46;
+        }
+
+        .decline-btn {
+            background: #f04747;
+            color: white;
+        }
+
+        .decline-btn:hover {
+            background: #c0392b;
+        }
+
+        .dm-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .dm-item:hover {
+            background: #36393f;
+        }
+
+        .dm-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #5865f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .dm-info {
+            flex: 1;
+        }
+
+        .dm-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .dm-last-message {
+            color: #8e9297;
+            font-size: 12px;
+        }
+
+        /* Модальное окно добавления друга */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2f3136;
+            padding: 24px;
+            border-radius: 8px;
+            width: 400px;
+        }
+
+        .modal-content h2 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            background: #202225;
+            border: 1px solid #040405;
+            border-radius: 4px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: #5865f2;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .modal-send {
+            background: #5865f2;
+            color: white;
+        }
+
+        .modal-send:hover {
+            background: #4752c4;
+        }
+
+        .modal-cancel {
+            background: #f04747;
+            color: white;
+        }
+
+        .modal-cancel:hover {
+            background: #c0392b;
+        }
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -487,45 +809,45 @@
                 display: none;
             }
             
-            .search-bar input {
-                width: 100px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .channels-sidebar {
-                display: none;
+            .dm-panel {
+                width: 280px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="app">
+    <!-- Экран входа/регистрации -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-container">
+            <h1>Discord Clone</h1>
+            <div class="error-message" id="errorMessage"></div>
+            <input type="text" id="usernameInput" placeholder="Имя пользователя" style="display: none;">
+            <input type="email" id="emailInput" placeholder="Email">
+            <input type="password" id="passwordInput" placeholder="Пароль">
+            <button id="authButton">Войти</button>
+            <div class="auth-toggle" id="authToggle">Нет аккаунта? Зарегистрироваться</div>
+        </div>
+    </div>
+
+    <!-- Основное приложение -->
+    <div class="app" id="app" style="display: none;">
         <!-- Левая панель серверов -->
         <div class="servers-sidebar">
-            <div class="server-icon home active">
+            <div class="server-icon home active" onclick="showChannels()">
                 <span>🏠</span>
             </div>
             <div class="server-divider"></div>
-            <div class="server-icon">
-                <span>🎮</span>
+            <div class="server-icon" onclick="showDMs()">
+                <span>💬</span>
             </div>
-            <div class="server-icon">
-                <span>🎵</span>
-            </div>
-            <div class="server-icon">
-                <span>📚</span>
-            </div>
-            <div class="server-icon">
-                <span>💻</span>
-            </div>
-            <div class="server-icon add-server">
+            <div class="server-divider"></div>
+            <div class="server-icon add-server" onclick="alert('Функция добавления сервера будет доступна скоро!')">
                 <span>+</span>
             </div>
         </div>
 
         <!-- Панель каналов -->
-        <div class="channels-sidebar">
+        <div class="channels-sidebar" id="channelsSidebar">
             <div class="server-header">
                 <h2>Мой Сервер</h2>
                 <button class="dropdown-btn">⌄</button>
@@ -565,95 +887,65 @@
                     <span class="channel-icon">🔊</span>
                     <span>Голосовой канал</span>
                 </div>
-
-                <div class="channel-category">
-                    <span class="category-name">🎯 ПРОЕКТЫ</span>
-                    <button class="add-btn">+</button>
-                </div>
-                <div class="channel" data-channel="разработка">
-                    <span class="channel-icon">#</span>
-                    <span>разработка</span>
-                </div>
-                <div class="channel" data-channel="дизайн">
-                    <span class="channel-icon">#</span>
-                    <span>дизайн</span>
-                </div>
             </div>
 
             <!-- Профиль пользователя -->
-            <div class="user-profile">
-                <div class="user-avatar">👤</div>
+            <div class="user-profile" onclick="showProfile()">
+                <div class="user-avatar" id="userAvatar">👤</div>
                 <div class="user-info">
-                    <div class="username">Пользователь</div>
-                    <div class="user-status">#1234</div>
+                    <div class="username" id="userName">Пользователь</div>
+                    <div class="user-status" id="userDiscordId">#0000</div>
                 </div>
                 <div class="user-actions">
-                    <button title="Микрофон">🎤</button>
-                    <button title="Наушники">🎧</button>
-                    <button title="Настройки">⚙️</button>
+                    <button onclick="event.stopPropagation(); logout()" title="Выйти">🚪</button>
                 </div>
             </div>
         </div>
 
+        <!-- Панель личных сообщений -->
+        <div class="dm-panel" id="dmPanel">
+            <div class="dm-header">
+                <h2>Личные сообщения</h2>
+                <div class="dm-actions">
+                    <button onclick="showAddFriendModal()" title="Добавить друга">➕</button>
+                    <button onclick="showNotifications()" title="Уведомления">🔔</button>
+                </div>
+            </div>
+
+            <div class="dm-section" id="notificationsSection" style="display: none;">
+                <h3>Уведомления</h3>
+                <div id="notificationsList"></div>
+            </div>
+
+            <div class="dm-section">
+                <h3>Переписки</h3>
+                <div id="dmList"></div>
+            </div>
+        </div>
+
         <!-- Основная область чата -->
-        <div class="chat-area">
+        <div class="chat-area" id="chatArea">
             <div class="chat-header">
                 <div class="channel-info">
                     <span class="channel-icon">#</span>
-                    <h3>общий</h3>
+                    <h3 id="chatTitle">общий</h3>
                 </div>
                 <div class="chat-actions">
                     <button title="Уведомления">🔔</button>
                     <button title="Закрепленные сообщения">📌</button>
                     <button title="Участники">👥</button>
-                    <div class="search-bar">
-                        <input type="text" placeholder="Поиск">
-                    </div>
                 </div>
             </div>
 
-            <div class="messages-area">
+            <div class="messages-area" id="messagesArea">
                 <div class="message">
-                    <div class="message-avatar">😀</div>
+                    <div class="message-avatar">👋</div>
                     <div class="message-content">
                         <div class="message-header">
-                            <span class="message-author">User1</span>
-                            <span class="message-time">Сегодня в 14:30</span>
+                            <span class="message-author">Система</span>
+                            <span class="message-time">Сейчас</span>
                         </div>
-                        <div class="message-text">Привет всем! Как дела?</div>
-                    </div>
-                </div>
-
-                <div class="message">
-                    <div class="message-avatar">🎮</div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <span class="message-author">GamerPro</span>
-                            <span class="message-time">Сегодня в 14:32</span>
-                        </div>
-                        <div class="message-text">Отлично! Кто хочет поиграть?</div>
-                    </div>
-                </div>
-
-                <div class="message">
-                    <div class="message-avatar">💻</div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <span class="message-author">DevMaster</span>
-                            <span class="message-time">Сегодня в 14:35</span>
-                        </div>
-                        <div class="message-text">Я сейчас занят проектом, но вечером свободен!</div>
-                    </div>
-                </div>
-
-                <div class="message">
-                    <div class="message-avatar">🎨</div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <span class="message-author">Designer</span>
-                            <span class="message-time">Сегодня в 14:40</span>
-                        </div>
-                        <div class="message-text">Кто-нибудь видел новые обновления Discord?</div>
+                        <div class="message-text">Добро пожаловать! Выберите канал или начните личную переписку.</div>
                     </div>
                 </div>
             </div>
@@ -661,157 +953,562 @@
             <!-- Поле ввода сообщения -->
             <div class="message-input">
                 <button class="attach-btn" title="Прикрепить файл">+</button>
-                <input type="text" placeholder="Написать в #общий" id="messageInput">
-                <button class="emoji-btn" title="Эмодзи">😊</button>
-                <button class="send-btn" title="Отправить">➤</button>
+                <input type="text" placeholder="Написать сообщение..." id="messageInput">
+                <button class="emoji-btn" title="Эмодзи" onclick="addEmoji()">😊</button>
+                <button class="send-btn" title="Отправить" onclick="sendMessage()">➤</button>
             </div>
         </div>
 
         <!-- Правая панель участников -->
-        <div class="members-sidebar">
-            <h3>Участники — 4</h3>
+        <div class="members-sidebar" id="membersSidebar">
+            <h3>Участники — 1</h3>
             <div class="member">
-                <div class="member-avatar">👑</div>
-                <span class="member-name">Admin</span>
+                <div class="member-avatar">👤</div>
+                <span class="member-name" id="memberName">Вы</span>
             </div>
-            <div class="member">
-                <div class="member-avatar">😀</div>
-                <span class="member-name">User1</span>
-            </div>
-            <div class="member">
-                <div class="member-avatar">🎮</div>
-                <span class="member-name">GamerPro</span>
-            </div>
-            <div class="member">
-                <div class="member-avatar">💻</div>
-                <span class="member-name">DevMaster</span>
-            </div>
-            <div class="member">
-                <div class="member-avatar">🎨</div>
-                <span class="member-name">Designer</span>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления друга -->
+    <div class="modal" id="addFriendModal">
+        <div class="modal-content">
+            <h2>Добавить друга</h2>
+            <input type="text" id="friendIdInput" placeholder="Введите ID пользователя (например: 1234)">
+            <div class="modal-actions">
+                <button class="modal-send" onclick="sendFriendRequest()">Отправить</button>
+                <button class="modal-cancel" onclick="closeAddFriendModal()">Отмена</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Переключение каналов
-        document.querySelectorAll('.channel').forEach(channel => {
-            channel.addEventListener('click', function() {
-                // Убираем активный класс у всех каналов
-                document.querySelectorAll('.channel').forEach(ch => {
-                    ch.classList.remove('active');
-                });
-                // Добавляем активный класс текущему каналу
-                this.classList.add('active');
-                
-                // Обновляем заголовок чата
-                const channelName = this.querySelector('span:last-child').textContent;
-                document.querySelector('.channel-info h3').textContent = channelName;
-                
-                // Обновляем placeholder в поле ввода
-                document.getElementById('messageInput').placeholder = 
-                    `Написать в #${channelName}`;
-            });
+        // Firebase конфигурация
+        const firebaseConfig = {
+            apiKey: "AIzaSyAzJHoGXXIRHI-GJTAd-or48U1Tb1p2O7w",
+            authDomain: "discordweb-2c170.firebaseapp.com",
+            projectId: "discordweb-2c170",
+            storageBucket: "discordweb-2c170.firebasestorage.app",
+            messagingSenderId: "772542183782",
+            appId: "1:772542183782:web:8b1fa7f5fa63267d80f0a7",
+            measurementId: "G-KWQ3N2BY72"
+        };
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+        let currentChatPartner = null;
+        let isLoginMode = true;
+
+        // Переключение между входом и регистрацией
+        document.getElementById('authToggle').addEventListener('click', function() {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                document.getElementById('authButton').textContent = 'Войти';
+                this.textContent = 'Нет аккаунта? Зарегистрироваться';
+                document.getElementById('usernameInput').style.display = 'none';
+            } else {
+                document.getElementById('authButton').textContent = 'Зарегистрироваться';
+                this.textContent = 'Уже есть аккаунт? Войти';
+                document.getElementById('usernameInput').style.display = 'block';
+            }
         });
 
-        // Отправка сообщений
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.querySelector('.send-btn');
-        const messagesArea = document.querySelector('.messages-area');
+        // Обработка входа/регистрации
+        document.getElementById('authButton').addEventListener('click', async function() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const username = document.getElementById('usernameInput').value;
+            const errorMessage = document.getElementById('errorMessage');
 
-        function sendMessage() {
-            const messageText = messageInput.value.trim();
-            if (messageText) {
-                const now = new Date();
-                const timeString = `Сегодня в ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            errorMessage.style.display = 'none';
+
+            if (!email || !password) {
+                errorMessage.textContent = 'Заполните все поля';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            if (!isLoginMode && !username) {
+                errorMessage.textContent = 'Введите имя пользователя';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                if (isLoginMode) {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } else {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await userCredential.user.updateProfile({
+                        displayName: username
+                    });
+                    
+                    // Генерация Discord-like ID
+                    const discordId = Math.floor(1000 + Math.random() * 9000);
+                    
+                    // Сохранение пользователя в Firestore
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        username: username,
+                        email: email,
+                        discordId: discordId.toString(),
+                        avatar: '👤',
+                        friends: [],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
                 
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                initializeApp();
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            }
+        });
+
+        // Инициализация приложения
+        function initializeApp() {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    
+                    // Загрузка данных пользователя
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    const userData = userDoc.data();
+                    
+                    document.getElementById('userName').textContent = userData.username;
+                    document.getElementById('userDiscordId').textContent = '#' + userData.discordId;
+                    document.getElementById('userAvatar').textContent = userData.avatar;
+                    document.getElementById('memberName').textContent = userData.username;
+                    
+                    // Загрузка друзей
+                    loadFriends();
+                    
+                    // Загрузка уведомлений
+                    loadNotifications();
+                    
+                    // Загрузка переписок
+                    loadDMs();
+                    
+                    // Слушатель запросов в друзья
+                    db.collection('friendRequests')
+                        .where('to', '==', user.uid)
+                        .where('status', '==', 'pending')
+                        .onSnapshot((snapshot) => {
+                            loadNotifications();
+                        });
+                }
+            });
+        }
+
+        // Показать каналы
+        function showChannels() {
+            document.getElementById('channelsSidebar').style.display = 'flex';
+            document.getElementById('dmPanel').classList.remove('active');
+            document.getElementById('dmPanel').style.display = 'none';
+            document.getElementById('chatArea').style.display = 'flex';
+            document.getElementById('membersSidebar').style.display = 'block';
+            document.getElementById('chatTitle').textContent = 'общий';
+            
+            // Активируем иконку сервера
+            document.querySelectorAll('.server-icon').forEach(icon => {
+                icon.classList.remove('active');
+            });
+            document.querySelector('.server-icon.home').classList.add('active');
+        }
+
+        // Показать личные сообщения
+        function showDMs() {
+            document.getElementById('channelsSidebar').style.display = 'none';
+            document.getElementById('dmPanel').classList.add('active');
+            document.getElementById('dmPanel').style.display = 'flex';
+            document.getElementById('membersSidebar').style.display = 'none';
+            loadDMs();
+            loadNotifications();
+            
+            // Активируем иконку сообщений
+            document.querySelectorAll('.server-icon').forEach(icon => {
+                icon.classList.remove('active');
+            });
+            event.target.closest('.server-icon').classList.add('active');
+        }
+
+        // Показать профиль
+        function showProfile() {
+            const userName = document.getElementById('userName').textContent;
+            const userDiscordId = document.getElementById('userDiscordId').textContent;
+            const userAvatar = document.getElementById('userAvatar').textContent;
+            
+            alert(`Профиль Discord:\nАватар: ${userAvatar}\nИмя: ${userName}\nID: ${userDiscordId}\n\nНажмите "Друзья" чтобы посмотреть список друзей`);
+        }
+
+        // Показать друзей
+        function showFriends() {
+            if (window.friendsList) {
+                alert(window.friendsList);
+            } else {
+                alert('У вас пока нет друзей');
+            }
+        }
+
+        // Показать уведомления
+        function showNotifications() {
+            const notificationsSection = document.getElementById('notificationsSection');
+            notificationsSection.style.display = notificationsSection.style.display === 'none' ? 'block' : 'none';
+            loadNotifications();
+        }
+
+        // Загрузка уведомлений
+        async function loadNotifications() {
+            if (!currentUser) return;
+            
+            const notificationsList = document.getElementById('notificationsList');
+            notificationsList.innerHTML = '';
+            
+            const snapshot = await db.collection('friendRequests')
+                .where('to', '==', currentUser.uid)
+                .where('status', '==', 'pending')
+                .get();
+            
+            if (snapshot.empty) {
+                notificationsList.innerHTML = '<div style="color: #8e9297; text-align: center;">Нет уведомлений</div>';
+                return;
+            }
+            
+            snapshot.forEach(async (doc) => {
+                const request = doc.data();
+                const fromUserDoc = await db.collection('users').doc(request.from).get();
+                const fromUser = fromUserDoc.data();
+                
+                const notificationHTML = `
+                    <div class="notification-item">
+                        <div class="notification-user">
+                            <div class="notification-avatar">${fromUser.avatar}</div>
+                            <div class="notification-info">
+                                <div class="notification-name">${fromUser.username}</div>
+                                <div class="notification-id">#${fromUser.discordId}</div>
+                            </div>
+                        </div>
+                        <div class="notification-actions">
+                            <button class="accept-btn" onclick="acceptFriendRequest('${doc.id}')">Принять</button>
+                            <button class="decline-btn" onclick="declineFriendRequest('${doc.id}')">Отклонить</button>
+                        </div>
+                    </div>
+                `;
+                
+                notificationsList.insertAdjacentHTML('beforeend', notificationHTML);
+            });
+        }
+
+        // Загрузка переписок
+        async function loadDMs() {
+            if (!currentUser) return;
+            
+            const dmList = document.getElementById('dmList');
+            dmList.innerHTML = '';
+            
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const userData = userDoc.data();
+            const friends = userData.friends || [];
+            
+            if (friends.length === 0) {
+                dmList.innerHTML = '<div style="color: #8e9297; text-align: center;">Нет переписок</div>';
+                return;
+            }
+            
+            for (const friendId of friends) {
+                const friendDoc = await db.collection('users').doc(friendId).get();
+                const friend = friendDoc.data();
+                
+                const dmHTML = `
+                    <div class="dm-item" onclick="openChat('${friendId}')">
+                        <div class="dm-avatar">${friend.avatar}</div>
+                        <div class="dm-info">
+                            <div class="dm-name">${friend.username}</div>
+                            <div class="dm-last-message">Нажмите для переписки</div>
+                        </div>
+                    </div>
+                `;
+                
+                dmList.insertAdjacentHTML('beforeend', dmHTML);
+            }
+        }
+
+        // Загрузка друзей
+        async function loadFriends() {
+            if (!currentUser) return;
+            
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const userData = userDoc.data();
+            const friends = userData.friends || [];
+            
+            let friendsList = 'Друзья:\n';
+            for (const friendId of friends) {
+                const friendDoc = await db.collection('users').doc(friendId).get();
+                const friend = friendDoc.data();
+                friendsList += `- ${friend.username} #${friend.discordId}\n`;
+            }
+            
+            if (friends.length === 0) {
+                friendsList = 'У вас пока нет друзей';
+            }
+            
+            // Сохраняем для использования в профиле
+            window.friendsList = friendsList;
+        }
+
+        // Открыть чат с другом
+        function openChat(friendId) {
+            currentChatPartner = friendId;
+            document.getElementById('chatArea').style.display = 'flex';
+            
+            // Загрузка сообщений
+            loadMessages(friendId);
+        }
+
+        // Загрузка сообщений
+        async function loadMessages(friendId) {
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.innerHTML = '';
+            
+            const chatId = [currentUser.uid, friendId].sort().join('_');
+            
+            const snapshot = await db.collection('chats')
+                .doc(chatId)
+                .collection('messages')
+                .orderBy('timestamp')
+                .get();
+            
+            snapshot.forEach((doc) => {
+                const message = doc.data();
+                const messageHTML = `
+                    <div class="message">
+                        <div class="message-avatar">${message.avatar}</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">${message.username}</span>
+                                <span class="message-time">${message.time}</span>
+                            </div>
+                            <div class="message-text">${message.text}</div>
+                        </div>
+                    </div>
+                `;
+                messagesArea.insertAdjacentHTML('beforeend', messageHTML);
+            });
+            
+            // Загрузка имени друга
+            const friendDoc = await db.collection('users').doc(friendId).get();
+            const friend = friendDoc.data();
+            document.getElementById('chatTitle').textContent = '@' + friend.username;
+        }
+
+        // Отправка сообщения
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+            
+            if (!messageText) return;
+            
+            const now = new Date();
+            const timeString = `Сегодня в ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            if (currentChatPartner) {
+                // Личное сообщение
+                const chatId = [currentUser.uid, currentChatPartner].sort().join('_');
+                
+                await db.collection('chats').doc(chatId).collection('messages').add({
+                    from: currentUser.uid,
+                    text: messageText,
+                    username: currentUser.displayName,
+                    avatar: '👤',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    time: timeString
+                });
+                
+                loadMessages(currentChatPartner);
+            } else {
+                // Сообщение в канал
+                const messagesArea = document.getElementById('messagesArea');
                 const messageHTML = `
                     <div class="message">
                         <div class="message-avatar">👤</div>
                         <div class="message-content">
                             <div class="message-header">
-                                <span class="message-author">Пользователь</span>
+                                <span class="message-author">${currentUser.displayName}</span>
                                 <span class="message-time">${timeString}</span>
                             </div>
                             <div class="message-text">${messageText}</div>
                         </div>
                     </div>
                 `;
-                
                 messagesArea.insertAdjacentHTML('beforeend', messageHTML);
-                messageInput.value = '';
-                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+            
+            messageInput.value = '';
+            document.getElementById('messagesArea').scrollTop = document.getElementById('messagesArea').scrollHeight;
+        }
+
+        // Показать модальное окно добавления друга
+        function showAddFriendModal() {
+            document.getElementById('addFriendModal').classList.add('active');
+        }
+
+        // Закрыть модальное окно добавления друга
+        function closeAddFriendModal() {
+            document.getElementById('addFriendModal').classList.remove('active');
+        }
+
+        // Отправить запрос в друзья
+        async function sendFriendRequest() {
+            const friendId = document.getElementById('friendIdInput').value.trim();
+            
+            if (!friendId) {
+                alert('Введите ID пользователя');
+                return;
+            }
+            
+            try {
+                // Поиск пользователя по Discord ID
+                const usersSnapshot = await db.collection('users')
+                    .where('discordId', '==', friendId)
+                    .get();
+                
+                if (usersSnapshot.empty) {
+                    alert('Пользователь не найден');
+                    return;
+                }
+                
+                const friendDoc = usersSnapshot.docs[0];
+                const friendUid = friendDoc.id;
+                
+                // Проверка, не себе ли отправляем запрос
+                if (friendUid === currentUser.uid) {
+                    alert('Нельзя добавить себя в друзья');
+                    return;
+                }
+                
+                // Проверка, не друзья ли уже
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                const userData = userDoc.data();
+                if (userData.friends && userData.friends.includes(friendUid)) {
+                    alert('Вы уже друзья');
+                    return;
+                }
+                
+                // Отправка запроса
+                await db.collection('friendRequests').add({
+                    from: currentUser.uid,
+                    to: friendUid,
+                    status: 'pending',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert('Запрос отправлен!');
+                closeAddFriendModal();
+                document.getElementById('friendIdInput').value = '';
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при отправке запроса');
             }
         }
 
-        sendButton.addEventListener('click', sendMessage);
+        // Принять запрос в друзья
+        async function acceptFriendRequest(requestId) {
+            try {
+                const requestDoc = await db.collection('friendRequests').doc(requestId).get();
+                const request = requestDoc.data();
+                
+                // Добавление в друзья обоим пользователям
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const friendRef = db.collection('users').doc(request.from);
+                
+                await userRef.update({
+                    friends: firebase.firestore.FieldValue.arrayUnion(request.from)
+                });
+                
+                await friendRef.update({
+                    friends: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                });
+                
+                // Удаление запроса
+                await db.collection('friendRequests').doc(requestId).delete();
+                
+                loadNotifications();
+                loadDMs();
+                loadFriends();
+                alert('Запрос принят!');
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при принятии запроса');
+            }
+        }
 
-        messageInput.addEventListener('keypress', function(e) {
+        // Отклонить запрос в друзья
+        async function declineFriendRequest(requestId) {
+            try {
+                await db.collection('friendRequests').doc(requestId).delete();
+                loadNotifications();
+                alert('Запрос отклонен');
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при отклонении запроса');
+            }
+        }
+
+        // Добавить эмодзи
+        function addEmoji() {
+            const emojis = ['😊', '😂', '❤️', '👍', '🎮', '🎵', '📚', '💻', '🎨', '🌟'];
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            document.getElementById('messageInput').value += randomEmoji;
+            document.getElementById('messageInput').focus();
+        }
+
+        // Выход
+        function logout() {
+            auth.signOut().then(() => {
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                currentUser = null;
+                currentChatPartner = null;
+            });
+        }
+
+        // Инициализация при загрузке
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                initializeApp();
+            }
+        });
+
+        // Обработка Enter в поле ввода
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
 
-        // Переключение серверов
-        document.querySelectorAll('.server-icon').forEach(server => {
-            server.addEventListener('click', function() {
-                if (!this.classList.contains('add-server')) {
-                    document.querySelectorAll('.server-icon').forEach(s => {
-                        s.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                }
+        // Обработка кликов по каналам
+        document.querySelectorAll('.channel').forEach(channel => {
+            channel.addEventListener('click', function() {
+                document.querySelectorAll('.channel').forEach(ch => {
+                    ch.classList.remove('active');
+                });
+                this.classList.add('active');
+                document.getElementById('chatTitle').textContent = this.dataset.channel;
+                currentChatPartner = null;
             });
         });
 
-        // Добавление нового сервера
-        document.querySelector('.add-server').addEventListener('click', function() {
-            alert('Функция добавления сервера будет доступна скоро!');
-        });
-
-        // Кнопки действий
-        document.querySelector('.attach-btn').addEventListener('click', function() {
-            alert('Загрузка файлов');
-        });
-
-        document.querySelector('.emoji-btn').addEventListener('click', function() {
-            messageInput.value += ' 😊';
-            messageInput.focus();
-        });
-
-        // Поиск по сообщениям
-        const searchInput = document.querySelector('.search-bar input');
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const messages = document.querySelectorAll('.message-text');
-            
-            messages.forEach(msg => {
-                const text = msg.textContent.toLowerCase();
-                if (text.includes(searchTerm) && searchTerm !== '') {
-                    msg.closest('.message').style.backgroundColor = '#4a4d52';
-                } else {
-                    msg.closest('.message').style.backgroundColor = '';
-                }
-            });
-        });
-
-        // Переключение микрофона
-        document.querySelectorAll('.user-actions button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (this.textContent === '🎤') {
-                    this.textContent = '🔇';
-                    this.style.color = '#f04747';
-                } else if (this.textContent === '🔇') {
-                    this.textContent = '🎤';
-                    this.style.color = '#8e9297';
-                } else if (this.textContent === '🎧') {
-                    this.textContent = '🔊';
-                    this.style.color = '#f04747';
-                } else if (this.textContent === '🔊') {
-                    this.textContent = '🎧';
-                    this.style.color = '#8e9297';
-                }
-            });
+        // Закрытие модального окна при клике вне его
+        document.getElementById('addFriendModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddFriendModal();
+            }
         });
     </script>
 </body>
