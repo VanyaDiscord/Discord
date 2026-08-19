@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MiniCraft - Полная версия</title>
+    <title>MiniCraft - Исправленная версия</title>
     <style>
         * {
             margin: 0;
@@ -163,6 +163,21 @@
             height: 70px;
             font-size: 30px;
             background: rgba(76, 175, 80, 0.5);
+        }
+        
+        #cameraControl {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 120px;
+            z-index: 100;
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            touch-action: none;
         }
         
         .menu {
@@ -411,6 +426,8 @@
         </div>
     </div>
     
+    <div id="cameraControl"></div>
+    
     <div class="menu" id="mainMenu">
         <h2 style="color: white; text-align: center; margin-bottom: 20px;">🎮 MiniCraft</h2>
         <button class="menu-btn" id="continueBtn">▶ Продолжить</button>
@@ -494,7 +511,6 @@
     <script>
         // ============ ОПТИМИЗАЦИЯ ============
         const MAX_BLOCKS = 5000;
-        const RENDER_DISTANCE = 30;
         
         // ============ ИНИЦИАЛИЗАЦИЯ ============
         const scene = new THREE.Scene();
@@ -715,7 +731,8 @@
             yaw: 0,
             pitch: 0,
             health: 20,
-            hunger: 20
+            hunger: 20,
+            fallStartY: 0
         };
         
         const keys = {};
@@ -754,13 +771,11 @@
                 const distanceToPlayer = this.mesh.position.distanceTo(player.position);
                 
                 if (distanceToPlayer < 15 && distanceToPlayer > 2) {
-                    // Преследуем игрока
                     const direction = player.position.clone().sub(this.mesh.position).normalize();
                     this.mesh.position.x += direction.x * this.speed * deltaTime;
                     this.mesh.position.z += direction.z * this.speed * deltaTime;
                     this.mesh.position.y += direction.y * this.speed * deltaTime;
                 } else if (distanceToPlayer <= 2 && this.attackCooldown <= 0) {
-                    // Атакуем игрока
                     player.health -= this.attackDamage;
                     this.attackCooldown = 2;
                     
@@ -770,7 +785,6 @@
                     
                     updateHealthBar();
                 } else {
-                    // Случайное блуждание
                     this.idleTimer -= deltaTime;
                     if (this.idleTimer <= 0) {
                         this.idleTimer = Math.random() * 3 + 1;
@@ -789,10 +803,8 @@
                     this.attackCooldown -= deltaTime;
                 }
                 
-                // Гравитация для мобов
                 this.mesh.position.y -= 10 * deltaTime;
                 
-                // Проверка коллизий с землей
                 const groundBlock = getBlock(
                     Math.floor(this.mesh.position.x),
                     Math.floor(this.mesh.position.y - 1),
@@ -803,7 +815,6 @@
                     this.mesh.position.y = Math.floor(this.mesh.position.y);
                 }
                 
-                // Удаление мертвых мобов
                 if (this.health <= 0) {
                     scene.remove(this.mesh);
                     const index = mobs.indexOf(this);
@@ -850,10 +861,6 @@
             if (e.key === 'e' || e.key === 'E' || e.key === 'у' || e.key === 'У') {
                 toggleInventory();
             }
-            
-            if (e.code === 'Space' && gameState.mode === 'creative') {
-                player.velocity.y = 10;
-            }
         });
         
         document.addEventListener('keyup', (e) => {
@@ -888,6 +895,39 @@
         
         document.addEventListener('pointerlockchange', () => {
             isPointerLocked = document.pointerLockElement === renderer.domElement;
+        });
+        
+        // ============ ПОВОРОТ КАМЕРЫ ДЛЯ ТЕЛЕФОНА ============
+        let cameraTouchStart = null;
+        const cameraControl = document.getElementById('cameraControl');
+        
+        cameraControl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            cameraTouchStart = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+            };
+        });
+        
+        cameraControl.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (cameraTouchStart) {
+                const deltaX = e.touches[0].clientX - cameraTouchStart.x;
+                const deltaY = e.touches[0].clientY - cameraTouchStart.y;
+                
+                player.yaw -= deltaX * 0.005;
+                player.pitch -= deltaY * 0.005;
+                player.pitch = Math.max(-Math.PI/3, Math.min(Math.PI/3, player.pitch));
+                
+                cameraTouchStart = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+            }
+        });
+        
+        cameraControl.addEventListener('touchend', () => {
+            cameraTouchStart = null;
         });
         
         // ============ МОБИЛЬНОЕ УПРАВЛЕНИЕ ============
@@ -969,25 +1009,30 @@
         
         function updateHealthBar() {
             const healthBar = document.getElementById('healthBar');
-            healthBar.innerHTML = '';
-            
-            for (let i = 0; i < 10; i++) {
-                const heart = document.createElement('span');
-                heart.className = 'heart';
-                heart.textContent = i < Math.ceil(player.health / 2) ? '❤️' : '🖤';
-                healthBar.appendChild(heart);
-            }
-        }
-        
-        function updateHungerBar() {
             const hungerBar = document.getElementById('hungerBar');
-            hungerBar.innerHTML = '';
             
-            for (let i = 0; i < 10; i++) {
-                const hunger = document.createElement('span');
-                hunger.className = 'hunger';
-                hunger.textContent = i < Math.ceil(player.hunger / 2) ? '🍗' : '🦴';
-                hungerBar.appendChild(hunger);
+            if (gameState.mode === 'creative') {
+                healthBar.style.display = 'none';
+                hungerBar.style.display = 'none';
+            } else {
+                healthBar.style.display = 'flex';
+                hungerBar.style.display = 'flex';
+                
+                healthBar.innerHTML = '';
+                for (let i = 0; i < 10; i++) {
+                    const heart = document.createElement('span');
+                    heart.className = 'heart';
+                    heart.textContent = i < Math.ceil(player.health / 2) ? '❤️' : '🖤';
+                    healthBar.appendChild(heart);
+                }
+                
+                hungerBar.innerHTML = '';
+                for (let i = 0; i < 10; i++) {
+                    const hunger = document.createElement('span');
+                    hunger.className = 'hunger';
+                    hunger.textContent = i < Math.ceil(player.hunger / 2) ? '🍗' : '🦴';
+                    hungerBar.appendChild(hunger);
+                }
             }
         }
         
@@ -1035,6 +1080,252 @@
             }
             
             updateInventoryUI();
+        }
+        
+        // ============ ЛОГИКА ИГРЫ ============
+        function raycast(distance = 10) {
+            const direction = new THREE.Vector3(0, 0, -1);
+            direction.applyQuaternion(camera.quaternion);
+            
+            const origin = camera.position.clone();
+            const step = 0.1;
+            
+            for (let i = 0; i < distance / step; i++) {
+                origin.add(direction.clone().multiplyScalar(step));
+                
+                const x = Math.floor(origin.x);
+                const y = Math.floor(origin.y);
+                const z = Math.floor(origin.z);
+                
+                if (getBlock(x, y, z)) {
+                    return { x, y, z, block: getBlock(x, y, z) };
+                }
+            }
+            
+            return null;
+        }
+        
+        function handleBlockBreak() {
+            const target = raycast(8);
+            if (!target) return;
+            
+            const blockType = target.block.userData.type;
+            const hardness = blockTypes[blockType].hardness;
+            
+            if (gameState.mode === 'creative' || hardness === 0) {
+                removeBlock(target.x, target.y, target.z);
+            } else {
+                setTimeout(() => {
+                    if (getBlock(target.x, target.y, target.z)) {
+                        removeBlock(target.x, target.y, target.z);
+                    }
+                }, hardness * 200);
+            }
+        }
+        
+        function handleBlockPlace() {
+            const target = raycast(8);
+            if (!target) return;
+            
+            const direction = new THREE.Vector3(0, 0, -1);
+            direction.applyQuaternion(camera.quaternion);
+            
+            const placePos = {
+                x: target.x + Math.round(direction.x),
+                y: target.y + Math.round(direction.y),
+                z: target.z + Math.round(direction.z)
+            };
+            
+            const playerBlockPos = {
+                x: Math.floor(player.position.x),
+                y: Math.floor(player.position.y),
+                z: Math.floor(player.position.z)
+            };
+            
+            if (placePos.x !== playerBlockPos.x || 
+                placePos.y !== playerBlockPos.y || 
+                placePos.z !== playerBlockPos.z) {
+                
+                const selectedItem = inventory.items[inventory.selectedSlot];
+                if (selectedItem && selectedItem.count > 0) {
+                    if (placeBlock(placePos.x, placePos.y, placePos.z, selectedItem.type)) {
+                        if (gameState.mode === 'survival') {
+                            selectedItem.count--;
+                            if (selectedItem.count <= 0) {
+                                inventory.items[inventory.selectedSlot] = null;
+                            }
+                            updateInventoryUI();
+                        }
+                    }
+                }
+            }
+        }
+        
+        function checkCollision(position) {
+            const playerWidth = 0.6;
+            const playerHeight = 1.8;
+            
+            // Проверяем блоки вокруг игрока
+            for (let x = Math.floor(position.x - playerWidth/2); x <= Math.floor(position.x + playerWidth/2); x++) {
+                for (let y = Math.floor(position.y); y <= Math.floor(position.y + playerHeight); y++) {
+                    for (let z = Math.floor(position.z - playerWidth/2); z <= Math.floor(position.z + playerWidth/2); z++) {
+                        if (getBlock(x, y, z)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function updatePlayer(deltaTime) {
+            const forward = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+            const right = new THREE.Vector3(forward.z, 0, -forward.x);
+            
+            const moveSpeed = gameState.mode === 'creative' ? 8 : 5;
+            const jumpForce = gameState.mode === 'creative' ? 12 : 8;
+            const gravity = gameState.mode === 'creative' ? 15 : 25;
+            
+            let moveX = 0;
+            let moveZ = 0;
+            
+            if (keys['KeyW'] || touchControls.forward) {
+                moveX += forward.x;
+                moveZ += forward.z;
+            }
+            if (keys['KeyS'] || touchControls.backward) {
+                moveX -= forward.x;
+                moveZ -= forward.z;
+            }
+            if (keys['KeyA'] || touchControls.left) {
+                moveX -= right.x;
+                moveZ -= right.z;
+            }
+            if (keys['KeyD'] || touchControls.right) {
+                moveX += right.x;
+                moveZ += right.z;
+            }
+            
+            const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+            if (length > 0) {
+                moveX = moveX / length * moveSpeed;
+                moveZ = moveZ / length * moveSpeed;
+            }
+            
+            // Прыжок
+            if ((keys['Space'] || touchControls.jump) && player.onGround) {
+                player.velocity.y = jumpForce;
+                player.onGround = false;
+                player.fallStartY = player.position.y;
+            }
+            
+            // Полет в креативе
+            if (gameState.mode === 'creative') {
+                if (keys['Space'] || touchControls.jump) {
+                    player.velocity.y = jumpForce;
+                }
+                if (keys['ShiftLeft']) {
+                    player.velocity.y = -jumpForce;
+                }
+            }
+            
+            // Гравитация
+            player.velocity.y -= gravity * deltaTime;
+            
+            // Сохраняем старую позицию
+            const oldPosition = player.position.clone();
+            
+            // Перемещение по X
+            player.position.x += moveX * deltaTime;
+            if (checkCollision(player.position)) {
+                player.position.x = oldPosition.x;
+            }
+            
+            // Перемещение по Z
+            player.position.z += moveZ * deltaTime;
+            if (checkCollision(player.position)) {
+                player.position.z = oldPosition.z;
+            }
+            
+            // Перемещение по Y
+            player.position.y += player.velocity.y * deltaTime;
+            
+            // Проверка коллизии с землей
+            player.onGround = false;
+            const groundCheck = checkCollision(player.position);
+            
+            if (groundCheck) {
+                // Определяем, падаем ли мы
+                if (player.velocity.y < 0) {
+                    // Урон от падения
+                    const fallDistance = player.fallStartY - player.position.y;
+                    if (fallDistance > 3 && gameState.mode === 'survival') {
+                        const fallDamage = Math.floor(fallDistance - 3);
+                        player.health -= fallDamage;
+                        
+                        if (player.health <= 0) {
+                            playerDeath();
+                        }
+                        
+                        updateHealthBar();
+                    }
+                    
+                    player.velocity.y = 0;
+                    player.onGround = true;
+                    player.fallStartY = player.position.y;
+                }
+                
+                // Откатываем позицию
+                player.position.y = oldPosition.y;
+            }
+            
+            // Ограничение мира
+            player.position.x = Math.max(-worldSize/2 + 1, Math.min(worldSize/2 - 1, player.position.x));
+            player.position.z = Math.max(-worldSize/2 + 1, Math.min(worldSize/2 - 1, player.position.z));
+            player.position.y = Math.max(1, Math.min(worldHeight + 10, player.position.y));
+            
+            // Обновление камеры
+            camera.position.copy(player.position);
+            camera.position.y += 1.7;
+            
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = player.yaw;
+            camera.rotation.x = player.pitch;
+            
+            // Голод в выживании
+            if (gameState.mode === 'survival' && gameState.difficulty !== 'peaceful') {
+                const hungerRate = gameState.difficulty === 'easy' ? 0.01 : 0.02;
+                player.hunger -= hungerRate * deltaTime;
+                
+                if (player.hunger <= 0) {
+                    player.hunger = 0;
+                    player.health -= 0.5 * deltaTime;
+                    
+                    if (player.health <= 0) {
+                        playerDeath();
+                    }
+                    
+                    updateHealthBar();
+                }
+            }
+        }
+        
+        function playerDeath() {
+            alert('💀 Вы погибли!');
+            player.health = 20;
+            player.hunger = 20;
+            player.position.set(0, 15, 0);
+            player.velocity.set(0, 0, 0);
+            player.fallStartY = 15;
+            updateHealthBar();
+        }
+        
+        function updateMobs(deltaTime) {
+            mobs.forEach(mob => mob.update(deltaTime));
+            
+            if (Math.random() < deltaTime * 0.3) {
+                spawnMob();
+            }
         }
         
         // ============ ВЕРСТАК ============
@@ -1219,7 +1510,6 @@
         });
         
         document.getElementById('exitBtn').addEventListener('click', () => {
-            // Выход из игры
             document.body.innerHTML = `
                 <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #000; color: white; flex-direction: column;">
                     <h1 style="font-size: 3em; margin-bottom: 20px;">👋 До свидания!</h1>
@@ -1236,7 +1526,6 @@
             mainMenu.classList.add('active');
         });
         
-        // Режим игры
         document.getElementById('gameModeValue').addEventListener('click', () => {
             settingsMenu.classList.remove('active');
             modeMenu.classList.add('active');
@@ -1248,6 +1537,7 @@
                 modeMenu.classList.remove('active');
                 settingsMenu.classList.add('active');
                 updateSettingsDisplay();
+                updateHealthBar();
             });
         });
         
@@ -1256,7 +1546,6 @@
             settingsMenu.classList.add('active');
         });
         
-        // Сложность
         document.getElementById('difficultyValue').addEventListener('click', () => {
             settingsMenu.classList.remove('active');
             difficultyMenu.classList.add('active');
@@ -1284,238 +1573,8 @@
                 gameState.difficulty === 'easy' ? '🙂 Лёгкая' : '😈 Сложная';
         }
         
-        // ============ ЛОГИКА ИГРЫ ============
-        function raycast(distance = 10) {
-            const direction = new THREE.Vector3(0, 0, -1);
-            direction.applyQuaternion(camera.quaternion);
-            
-            const origin = camera.position.clone();
-            const step = 0.1;
-            
-            for (let i = 0; i < distance / step; i++) {
-                origin.add(direction.clone().multiplyScalar(step));
-                
-                const x = Math.floor(origin.x);
-                const y = Math.floor(origin.y);
-                const z = Math.floor(origin.z);
-                
-                if (getBlock(x, y, z)) {
-                    return { x, y, z, block: getBlock(x, y, z) };
-                }
-            }
-            
-            return null;
-        }
-        
-        function handleBlockBreak() {
-            const target = raycast(8);
-            if (!target) return;
-            
-            const blockType = target.block.userData.type;
-            const hardness = blockTypes[blockType].hardness;
-            
-            if (gameState.mode === 'creative' || hardness === 0) {
-                removeBlock(target.x, target.y, target.z);
-            } else {
-                // В выживании нужно время на добычу
-                setTimeout(() => {
-                    if (getBlock(target.x, target.y, target.z)) {
-                        removeBlock(target.x, target.y, target.z);
-                    }
-                }, hardness * 200);
-            }
-        }
-        
-        function handleBlockPlace() {
-            const target = raycast(8);
-            if (!target) return;
-            
-            const direction = new THREE.Vector3(0, 0, -1);
-            direction.applyQuaternion(camera.quaternion);
-            
-            const placePos = {
-                x: target.x + Math.round(direction.x),
-                y: target.y + Math.round(direction.y),
-                z: target.z + Math.round(direction.z)
-            };
-            
-            const playerBlockPos = {
-                x: Math.floor(player.position.x),
-                y: Math.floor(player.position.y),
-                z: Math.floor(player.position.z)
-            };
-            
-            if (placePos.x !== playerBlockPos.x || 
-                placePos.y !== playerBlockPos.y || 
-                placePos.z !== playerBlockPos.z) {
-                
-                const selectedItem = inventory.items[inventory.selectedSlot];
-                if (selectedItem && selectedItem.count > 0) {
-                    if (placeBlock(placePos.x, placePos.y, placePos.z, selectedItem.type)) {
-                        if (gameState.mode === 'survival') {
-                            selectedItem.count--;
-                            if (selectedItem.count <= 0) {
-                                inventory.items[inventory.selectedSlot] = null;
-                            }
-                            updateInventoryUI();
-                        }
-                    }
-                }
-            }
-        }
-        
-        function checkCollision(position) {
-            const size = 0.3;
-            const height = 1.8;
-            
-            for (let x = -1; x <= 1; x++) {
-                for (let y = 0; y <= 1; y++) {
-                    for (let z = -1; z <= 1; z++) {
-                        const blockX = Math.floor(position.x + x * size);
-                        const blockY = Math.floor(position.y + y * height);
-                        const blockZ = Math.floor(position.z + z * size);
-                        
-                        if (getBlock(blockX, blockY, blockZ)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-        
-        function updatePlayer(deltaTime) {
-            const forward = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
-            const right = new THREE.Vector3(forward.z, 0, -forward.x);
-            
-            const moveSpeed = gameState.mode === 'creative' ? 8 : 5;
-            const jumpForce = gameState.mode === 'creative' ? 12 : 8;
-            const gravity = gameState.mode === 'creative' ? 15 : 20;
-            
-            let moveX = 0;
-            let moveZ = 0;
-            
-            if (keys['KeyW'] || touchControls.forward) {
-                moveX += forward.x;
-                moveZ += forward.z;
-            }
-            if (keys['KeyS'] || touchControls.backward) {
-                moveX -= forward.x;
-                moveZ -= forward.z;
-            }
-            if (keys['KeyA'] || touchControls.left) {
-                moveX -= right.x;
-                moveZ -= right.z;
-            }
-            if (keys['KeyD'] || touchControls.right) {
-                moveX += right.x;
-                moveZ += right.z;
-            }
-            
-            const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
-            if (length > 0) {
-                moveX = moveX / length * moveSpeed;
-                moveZ = moveZ / length * moveSpeed;
-            }
-            
-            if ((keys['Space'] || touchControls.jump) && player.onGround) {
-                player.velocity.y = jumpForce;
-                player.onGround = false;
-            }
-            
-            // Полет в креативе
-            if (gameState.mode === 'creative') {
-                if (keys['Space'] || touchControls.jump) {
-                    player.velocity.y = jumpForce;
-                }
-                if (keys['ShiftLeft']) {
-                    player.velocity.y = -jumpForce;
-                }
-            }
-            
-            player.velocity.y -= gravity * deltaTime;
-            
-            player.position.x += moveX * deltaTime;
-            player.position.z += moveZ * deltaTime;
-            player.position.y += player.velocity.y * deltaTime;
-            
-            if (checkCollision(player.position)) {
-                player.position.x -= moveX * deltaTime;
-                player.position.z -= moveZ * deltaTime;
-                
-                if (checkCollision(player.position)) {
-                    player.position.x += moveX * deltaTime;
-                    player.position.z += moveZ * deltaTime;
-                }
-            }
-            
-            player.onGround = false;
-            for (let y = 0; y >= -1; y--) {
-                const blockX = Math.floor(player.position.x);
-                const blockY = Math.floor(player.position.y + y);
-                const blockZ = Math.floor(player.position.z);
-                
-                if (getBlock(blockX, blockY, blockZ)) {
-                    player.position.y = blockY + 1;
-                    player.velocity.y = 0;
-                    player.onGround = true;
-                    break;
-                }
-            }
-            
-            player.position.x = Math.max(-worldSize/2 + 1, Math.min(worldSize/2 - 1, player.position.x));
-            player.position.z = Math.max(-worldSize/2 + 1, Math.min(worldSize/2 - 1, player.position.z));
-            player.position.y = Math.max(1, Math.min(worldHeight + 10, player.position.y));
-            
-            camera.position.copy(player.position);
-            camera.position.y += 1.7;
-            
-            camera.rotation.order = 'YXZ';
-            camera.rotation.y = player.yaw;
-            camera.rotation.x = player.pitch;
-            
-            // Голод в выживании
-            if (gameState.mode === 'survival' && gameState.difficulty !== 'peaceful') {
-                const hungerRate = gameState.difficulty === 'easy' ? 0.01 : 0.02;
-                player.hunger -= hungerRate * deltaTime;
-                
-                if (player.hunger <= 0) {
-                    player.hunger = 0;
-                    player.health -= 0.5 * deltaTime;
-                    
-                    if (player.health <= 0) {
-                        playerDeath();
-                    }
-                    
-                    updateHealthBar();
-                }
-                
-                updateHungerBar();
-            }
-        }
-        
-        function playerDeath() {
-            alert('💀 Вы погибли!');
-            player.health = 20;
-            player.hunger = 20;
-            player.position.set(0, 15, 0);
-            player.velocity.set(0, 0, 0);
-            updateHealthBar();
-            updateHungerBar();
-        }
-        
-        function updateMobs(deltaTime) {
-            mobs.forEach(mob => mob.update(deltaTime));
-            
-            // Спавн мобов
-            if (Math.random() < deltaTime * 0.3) {
-                spawnMob();
-            }
-        }
-        
         // ============ АНИМАЦИЯ ============
         let lastTime = 0;
-        let hungerTimer = 0;
         
         function animate(currentTime) {
             requestAnimationFrame(animate);
@@ -1541,7 +1600,6 @@
         // ============ ЗАПУСК ============
         updateHotbar();
         updateHealthBar();
-        updateHungerBar();
         animate(0);
         
         console.log('🎮 MiniCraft запущен!');
